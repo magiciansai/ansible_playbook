@@ -1,0 +1,44 @@
+---
+- name: install docker-engine on ubuntu 16.04
+  hosts: localhost
+  connection: local
+  sudo: yes
+  tasks:
+    - name: gather machine info
+      setup:
+
+    - name: update apt source
+      apt:
+         update_cache: yes
+
+    - name: add new GPG key
+      apt_key:
+         keyserver: hkp://ha.pool.sks-keyservers.net:80
+         id: 58118E89F3A912897C070ADBF76221572C52609D
+   
+    - name: add a docker apt repo
+      apt_repository:
+         repo: deb https://apt.dockerproject.org/repo ubuntu-xenial main
+         filename: docker
+         state: present
+
+    
+    - name: update apt source again
+      apt:
+         update_cache: yes
+
+    - name: install prerequisites and docker engine
+      apt:
+         name: "{{ item }}"
+         state: present
+      with_items:
+         - linux-image-extra-{{ ansible_kernel }}
+         - linux-image-extra-virtual
+         - docker-engine
+      notify: start docker daemon
+
+  handlers:
+    - name: start docker daemon
+      service:
+         name: docker
+         state: started
