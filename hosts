@@ -1,0 +1,9 @@
+[manager_hosts]
+manager ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n1/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2222
+[worker_hosts]
+work1 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n2/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2200
+work2 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n3/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201
+
+[debian_hosts]
+manager_hosts
+worker_hosts
