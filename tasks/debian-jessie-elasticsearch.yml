@@ -1,0 +1,55 @@
+---
+- name: install elasticsearch on Debian Jessie
+  hosts: debian_hosts
+  sudo: yes
+  tasks:
+    - name: gather machine info
+      setup:
+
+    - name: add new GPG key
+      apt_key:
+         url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+         id: D88E42B4
+   
+    - name: add elasticsearch-5.x apt repo
+      apt_repository:
+         repo: deb https://artifacts.elastic.co/packages/5.x/apt stable main
+         filename: elasric-5.x
+         state: present
+
+    - name: add new  ubuntu server GPG key
+      apt_key:
+         keyserver: keyserver.ubuntu.com
+         id: EEA14886
+
+    - name: add java8 apt repo
+      apt_repository:
+         repo: deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main
+         filename: java-8-debian
+
+    - name: update apt source again
+      apt:
+         update_cache: yes
+
+    - name: Automatically select the Oracle License
+      shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+
+    - name: install elasticsearch
+      apt:
+         name: "{{ item }}"
+         state: present
+      with_items:
+         - oracle-java8-installer
+         - apt-transport-https
+         - elasticsearch
+
+#    - name: copy elasticsearch config file
+#      template:
+#         src: templates/elasticsearch.yml.j2
+#         dest: /etc/elasticsearch/elasticsearch.yml
+
+    - name: systmed config
+      shell: /bin/systemctl daemon-reload & systemctl stop elasticsearch.service
+
+    - name: start service
+      shell: sudo systemctl start elasticsearch.service

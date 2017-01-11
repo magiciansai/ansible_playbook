@@ -1,6 +1,6 @@
 ---
 - name: install docker-engine on Debian Jessie
-  hosts: debian_hosts
+  hosts: swarm_manager_hosts
   sudo: yes
   tasks:
     - name: gather machine info
@@ -49,8 +49,36 @@
          state: present
       notify: start docker daemon
 
+    - name: start dockerd
+      service:
+         name: docker
+         state: started
+
+    - name: levae swarm mode first
+      shell: docker swarm leave --force
+      ignore_errors: yes
+      when: inventory_hostname in groups['swarm_manager_init']
+
+    - name: swarm mode init
+      shell: docker swarm init --advertise-addr {{ansible_eth1.ipv4.address}}
+      when: inventory_hostname in groups['swarm_manager_init']
+
+    - name: swarm mode join info
+      shell: docker swarm join-token -q manager
+      register: swarm_join_manager_token
+      delegate_to: manager_init
+      when: inventory_hostname in groups['swarm_managers']
+
+    - name: other swarm manager join cluster
+      shell: docker swarm join --token {{swarm_join_manager_token.stdout}} {{hostvars['manager_init']['ansible_eth1']['ipv4']['address']}}:2377
+      when: inventory_hostname in groups['swarm_managers']
+
+    - name: modify es require
+      shell: sysctl -w vm.max_map_count=262144
+
   handlers:
     - name: start docker daemon
       service:
          name: docker
          state: started
+

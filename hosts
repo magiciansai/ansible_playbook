@@ -4,6 +4,30 @@ manager ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/mach
 work1 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n2/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2200
 work2 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n3/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201
 
-[debian_hosts]
+[debian_hosts:children]
 manager_hosts
 worker_hosts
+
+[debian_hosts:vars]
+ansible_ssh_user=vagrant
+
+[swarm_manager_init]
+manager_init ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n1/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2222
+
+[swarm_managers]
+manager1 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n2/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2200
+manager2 ansible_ssh_private_key_file=/home/hz/study/consul_vagrant/.vagrant/machines/n3/virtualbox/private_key ansible_ssh_host=127.0.0.1 ansible_ssh_port=2201
+
+[swarm_manager_hosts:children]
+swarm_manager_init
+swarm_managers
+
+[reader_swarm_managers]
+reader_server1 ansible_ssh_host=192.168.1.218 ansible_ssh_user=reader
+
+[reader_swarm_workers]
+reader_server2 ansible_ssh_host=192.168.1.217 ansible_ssh_user=reader
+
+[reader_servers:children]
+reader_swarm_managers
+reader_swarm_workers

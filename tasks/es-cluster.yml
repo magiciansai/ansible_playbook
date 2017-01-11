@@ -1,0 +1,56 @@
+- name: create es cluster overlay network
+  shell: docker network rm es-network
+  ignore_errors: true
+  run_once: true
+
+- name: create es cluster overlay network
+  shell: docker network create -d overlay es-network
+  run_once: true
+
+- name: modify es require
+  shell: sysctl -w vm.max_map_count=262144
+
+
+- name: create es container mount dir
+  file: 
+       path: /docker/es/{{ item.type }}/{{ item.node }}
+       state: directory
+       mode:  0755
+  with_items:
+       - { type : 'data', node: 'node00' }
+       - { type : 'data', node: 'node01' }
+       - { type : 'data', node: 'node02' }
+       - { type : 'logs', node: 'node00' }
+       - { type : 'logs', node: 'node01' }
+       - { type : 'logs', node: 'node02' }
+       - { type : 'config', node: 'node00' }
+       - { type : 'config', node: 'node01' }
+       - { type : 'config', node: 'node02' }
+       
+
+- name: create es master node
+  shell: >
+          docker service create --name es-master --replicas 1 \
+                         --network es-network --publish 9200:9200 --publish 9300:9300 \
+                         --mount type=bind,src=/docker/es/data/node00,destination=/usr/share/elasticsearch/data \
+                         --mount type=bind,src=/docker/es/logs/node00,destination=/usr/share/elasticsearch/logs \
+                         --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
+                         elasticsearch elasticsearch \
+                         -E cluster.name=es-cluster -E node.master=true \
+                         -E node.name=node-master-00
+  run_once: true
+
+- name: create es data nodes
+  shell: >
+         docker service create --name es-data-{{item}} \
+                 --replicas 1 --network es-network \
+                 --mount type=bind,src=/docker/es/data/node{{item}},destination=/usr/share/elasticsearch/data \
+                 --mount type=bind,src=/docker/es/logs/node{{item}},destination=/usr/share/elasticsearch/logs \
+                 --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
+                 elasticsearch elasticsearch \
+                 -E cluster.name=es-cluster -E node.name=node-data-{{item}} \
+                 -E discovery.zen.ping.unicast.hosts=es-master
+  with_items:
+      - "01"
+      - "02"
+  run_once: true

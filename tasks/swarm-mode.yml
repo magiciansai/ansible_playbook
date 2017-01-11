@@ -1,0 +1,23 @@
+- name: dockerd started
+  service:
+      name: docker
+      state: started
+  ignore_errors: yes
+
+- name: levae swarm mode first
+  shell: docker swarm leave --force
+  ignore_errors: yes
+
+- name: swarm mode init
+  shell: docker swarm init --advertise-addr {{ manager_init_addr }}
+  when: inventory_hostname in groups[swarm_manager_group]
+
+- name: swarm mode join info
+  shell: docker swarm join-token -q worker
+  register: swarm_join_manager_token
+  delegate_to: "{{swarm_manager_init}}"
+  when: inventory_hostname in groups[swarm_worker_group]
+
+- name: other swarm manager join cluster
+  shell: docker swarm join --token {{swarm_join_manager_token.stdout}} {{manager_init_addr}}:2377
+  when: inventory_hostname in groups[swarm_worker_group]

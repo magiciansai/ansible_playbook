@@ -1,8 +1,3 @@
----
-- name: install docker-engine on Debian Jessie
-  hosts: swarm_manager_hosts
-  sudo: yes
-  tasks:
     - name: gather machine info
       setup:
 
@@ -47,34 +42,16 @@
       apt:
          name: docker-engine
          state: present
-      notify: start docker daemon
 
     - name: start dockerd
       service:
          name: docker
          state: started
+ 
+    - name: add netease accelarate
+      shell: echo "DOCKER_OPTS=\"\$DOCKER_OPTS --registry-mirror=http://hub-mirror.c.163.com\"" >> /etc/default/docker
 
-    - name: levae swarm mode first
-      shell: docker swarm leave --force
-      ignore_errors: yes
-      when: inventory_hostname in groups['swarm_manager_init']
-
-    - name: swarm mode init
-      shell: docker swarm init --advertise-addr {{ansible_eth1.ipv4.address}}
-      when: inventory_hostname in groups['swarm_manager_init']
-
-    - name: swarm mode join info
-      shell: docker swarm join-token -q manager
-      register: swarm_join_manager_token
-      delegate_to: manager_init
-      when: inventory_hostname in groups['swarm_managers']
-
-    - name: other swarm manager join cluster
-      shell: docker swarm join --token {{swarm_join_manager_token.stdout}} {{hostvars['manager_init']['ansible_eth1']['ipv4']['address']}}:2377
-      when: inventory_hostname in groups['swarm_managers']
-
-  handlers:
-    - name: start docker daemon
+    - name: start dockerd
       service:
          name: docker
-         state: started
+         state: restarted

@@ -1,0 +1,11 @@
+---
+- name: deploy cluster
+  hosts: debian_hosts #reader_servers
+  sudo: yes
+  vars_files:
+    - ../vars/swarm_hosts.yml
+  tasks:
+    #- include: docker-install.yml
+    - include: docker-install-debian-jessie.yml
+    - include: swarm-mode.yml
+    - include: es-cluster.yml

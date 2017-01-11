@@ -1,0 +1,6 @@
+---
+network.host: {{ansible_eth1.ipv4.address}}
+cluster.name: production
+node.name: {{ ansible_nodename }}
+#discovery.zen.ping.unicast.hosts: ["172.20.20.12", "172.20.20.11", "172.20.20.10"]
+

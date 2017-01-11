@@ -1,0 +1,8 @@
+#- swarm_manager_group: 'reader_swarm_managers'
+#- swarm_worker_group: 'reader_swarm_workers'
+#- swarm_manager_init: 'reader_server1'
+#- manager_init_addr: hostvars[swarm_manger_init]['ansible_ssh_host']
+- swarm_manager_group: 'manager_hosts'
+- swarm_worker_group: 'worker_hosts'
+- swarm_manager_init: 'manager'
+- manager_init_addr: "{{hostvars['manager']['ansible_eth1']['ipv4']['address']}}"

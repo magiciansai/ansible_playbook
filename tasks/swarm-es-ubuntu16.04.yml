@@ -1,0 +1,15 @@
+---
+- name: install docker-engine on Debian Jessie
+  hosts: reader_servers
+  sudo: yes
+  tasks:
+#    - include: docker-install.yml
+
+
+
+  handlers:
+    - name: start docker daemon
+      service:
+         name: docker
+         state: restarted
+
