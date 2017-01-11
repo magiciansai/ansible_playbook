@@ -36,8 +36,11 @@
                          --mount type=bind,src=/docker/es/logs/node00,destination=/usr/share/elasticsearch/logs \
                          --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
                          elasticsearch elasticsearch \
-                         -E cluster.name=es-cluster -E node.master=true \
-                         -E node.name=node-master-00
+                         -E cluster.name=es-cluster -E node.master=true -E node.data=true \
+                         -E node.name=node-master-00 \
+                         -E discovery.zen.ping.unicast.hosts=es-master \
+                         -E discovery.zen.ping.unicast.hosts=es-data-01 \
+                         -E discovery.zen.ping.unicast.hosts=es-data-02
   run_once: true
 
 - name: create es data nodes
@@ -48,8 +51,10 @@
                  --mount type=bind,src=/docker/es/logs/node{{item}},destination=/usr/share/elasticsearch/logs \
                  --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
                  elasticsearch elasticsearch \
-                 -E cluster.name=es-cluster -E node.name=node-data-{{item}} \
-                 -E discovery.zen.ping.unicast.hosts=es-master
+                 -E cluster.name=es-cluster -E node.name=node-data-{{item}} -E node.master=true -E node.data=true \
+                 -E discovery.zen.ping.unicast.hosts=es-master \
+                 -E discovery.zen.ping.unicast.hosts=es-data-01 \
+                 -E discovery.zen.ping.unicast.hosts=es-data-02
   with_items:
       - "01"
       - "02"
