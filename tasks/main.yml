@@ -1,6 +1,6 @@
 ---
 - name: deploy cluster
-  hosts: debian_hosts #reader_servers
+  hosts: reader_servers
   sudo: yes
   vars_files:
     - ../vars/swarm_hosts.yml

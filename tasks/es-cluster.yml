@@ -10,31 +10,47 @@
 - name: modify es require
   shell: sysctl -w vm.max_map_count=262144
 
-
 - name: create es container mount dir
   file: 
-       path: /docker/es/{{ item.type }}/{{ item.node }}
+       path: /docker/es/{{ item.node }}/{{ item.type }}
        state: directory
        mode:  0755
   with_items:
        - { type : 'data', node: 'node00' }
-       - { type : 'data', node: 'node01' }
-       - { type : 'data', node: 'node02' }
        - { type : 'logs', node: 'node00' }
-       - { type : 'logs', node: 'node01' }
-       - { type : 'logs', node: 'node02' }
        - { type : 'config', node: 'node00' }
+       - { type : 'plugins', node: 'node00' }
+       - { type : 'data', node: 'node01' }
+       - { type : 'logs', node: 'node01' }
        - { type : 'config', node: 'node01' }
+       - { type : 'plugins', node: 'node01' }
+       - { type : 'data', node: 'node02' }
+       - { type : 'logs', node: 'node02' }
        - { type : 'config', node: 'node02' }
+       - { type : 'plugins', node: 'node02' }
+
+- name: copy es config and plugins dir
+  copy:
+       src: ../files/es/{{item.type}}
+       dest: /docker/es/{{item.node}}/
+  with_items:
+       - { type : 'config', node: 'node00' }
+       - { type : 'plugins', node: 'node00' }
+       - { type : 'config', node: 'node01' }
+       - { type : 'plugins', node: 'node01' }
+       - { type : 'config', node: 'node02' }
+       - { type : 'plugins', node: 'node02' }
        
 
 - name: create es master node
   shell: >
-          docker service create --name es-master --replicas 1 \
+         docker service rm es-master ; \
+         docker service create --name es-master --replicas 1 \
                          --network es-network --publish 9200:9200 --publish 9300:9300 \
-                         --mount type=bind,src=/docker/es/data/node00,destination=/usr/share/elasticsearch/data \
-                         --mount type=bind,src=/docker/es/logs/node00,destination=/usr/share/elasticsearch/logs \
-                         --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
+                         --mount type=bind,src=/docker/es/node00/data,destination=/usr/share/elasticsearch/data \
+                         --mount type=bind,src=/docker/es/node00/logs,destination=/usr/share/elasticsearch/logs \
+                         --mount type=bind,src=/docker/es/node00/plugins,destination=/usr/share/elasticsearch/plugins \
+                         --mount type=bind,src=/docker/es/node00/config,destination=/usr/share/elasticsearch/config \
                          elasticsearch elasticsearch \
                          -E cluster.name=es-cluster -E node.master=true -E node.data=true \
                          -E node.name=node-master-00 \
@@ -45,11 +61,13 @@
 
 - name: create es data nodes
   shell: >
+         docker service rm es-data-{{item}} ; \
          docker service create --name es-data-{{item}} \
                  --replicas 1 --network es-network \
-                 --mount type=bind,src=/docker/es/data/node{{item}},destination=/usr/share/elasticsearch/data \
-                 --mount type=bind,src=/docker/es/logs/node{{item}},destination=/usr/share/elasticsearch/logs \
-                 --env ES_JAVA_OPTS="-Xms200m -Xmx200m" \
+                 --mount type=bind,src=/docker/es/node{{item}}/data,destination=/usr/share/elasticsearch/data \
+                 --mount type=bind,src=/docker/es/node{{item}}/logs,destination=/usr/share/elasticsearch/logs \
+                 --mount type=bind,src=/docker/es/node{{item}}/plugins,destination=/usr/share/elasticsearch/plugins \
+                 --mount type=bind,src=/docker/es/node{{item}}/config,destination=/usr/share/elasticsearch/config \
                  elasticsearch elasticsearch \
                  -E cluster.name=es-cluster -E node.name=node-data-{{item}} -E node.master=true -E node.data=true \
                  -E discovery.zen.ping.unicast.hosts=es-master \
