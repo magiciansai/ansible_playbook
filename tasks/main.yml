@@ -9,3 +9,4 @@
     - include: docker-install-debian-jessie.yml
     - include: swarm-mode.yml
     - include: es-cluster.yml
+    - include: redis.yml

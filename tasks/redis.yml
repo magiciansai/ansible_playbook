@@ -1,0 +1,9 @@
+- name: redis service
+  shell: >-
+         docker service create --name redis \
+                         --replicas 1 --constraint 'node.labels.hostname == {{swarm_manager_init}}' \
+                         --publish 6379:6379 \
+                         --mount type=bind,src=/docker/redis/redis.conf,destination=/usr/local/etc/redis/redis.conf \
+                         redis  \
+                         redis-server /usr/local/etc/redis/redis.conf
+  when: inventory_hostname in groups["reader_swarm_managers"]

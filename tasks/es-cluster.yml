@@ -5,7 +5,8 @@
   run_once: true
 
 - name: create es cluster overlay network
-  shell: docker network create -d overlay es-network
+  shell: >-
+         docker network create -d overlay es-network
   when: inventory_hostname in groups["reader_swarm_managers"]
   run_once: true
 
