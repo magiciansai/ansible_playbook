@@ -1,13 +1,19 @@
+- name: rm docker service
+  shell: docker service rm $(docker service ls -q)
+  ignore_errors: true
+  when: inventory_hostname in groups[swarm_manager_group]
+  run_once: true
+
 - name: rm es cluster overlay network
   shell: docker network rm es-network
   ignore_errors: true
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true
 
 - name: create es cluster overlay network
   shell: >-
          docker network create -d overlay es-network
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true
 
 - name: modify es require
@@ -29,11 +35,18 @@
   with_nested:
        - [ 'config', 'plugins']
        - [ 'node00', 'node01', 'node02']
+
+- name: template es config
+  template:
+       src: ../templates/es/elasticsearch.yml.j2
+       dest: /docker/es/{{item}}/config/elasticsearch.yml
+  with_items:
+       - [ 'node00', 'node01', 'node02']
        
 - name: update node labels.hostname
   shell: docker node update --label-add hostname={{item}} {{hostvars[item]['ansible_hostname']}}
   with_items: "{{ play_hosts }}"
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true
 
 - name: create es master node
@@ -47,13 +60,11 @@
                          --mount type=bind,src=/docker/es/node{{item[1]}}/config,destination=/usr/share/elasticsearch/config \
                          elasticsearch:5.1.1 elasticsearch \
                          -E cluster.name=es-dev-cluster -E node.master=true -E node.data=true \
-                         -E node.name=node-{{item[0]}}-master-{{item[1]}} \
-                         -E discovery.zen.ping.unicast.hosts=es-reader_server1-master-00 \
-                         -E discovery.zen.ping.unicast.hosts=es-reader_server2-master-00
+                         -E node.name=node-{{item[0]}}-master-{{item[1]}}
   with_nested:
       - "{{inventory_hostname}}"
       - ["00"]
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true
 
 - name: create es master node not expose port
@@ -66,13 +77,11 @@
                          --mount type=bind,src=/docker/es/node{{item[1]}}/config,destination=/usr/share/elasticsearch/config \
                          elasticsearch:5.1.1 elasticsearch \
                          -E cluster.name=es-dev-cluster -E node.master=true -E node.data=true \
-                         -E node.name=node-{{item[0]}}-master-{{item[1]}} \
-                         -E discovery.zen.ping.unicast.hosts=es-reader_server1-master-00 \
-                         -E discovery.zen.ping.unicast.hosts=es-reader_server2-master-00
+                         -E node.name=node-{{item[0]}}-master-{{item[1]}}
   with_nested:
-      - "{{groups['reader_swarm_workers']}}"
+      - "{{groups['worker_hosts']}}"
       - ["00"]
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true
 
 - name: create es data nodes
@@ -84,11 +93,9 @@
                  --mount type=bind,src=/docker/es/node{{item[1]}}/plugins,destination=/usr/share/elasticsearch/plugins \
                  --mount type=bind,src=/docker/es/node{{item[1]}}/config,destination=/usr/share/elasticsearch/config \
                  elasticsearch:5.1.1 elasticsearch \
-                 -E cluster.name=es-dev-cluster -E node.name=node-{{item[0]}}-data-{{item[1]}} -E node.data=true \
-                 -E discovery.zen.ping.unicast.hosts=es-reader_server1-master-00 \
-                 -E discovery.zen.ping.unicast.hosts=es-reader_server2-master-00
+                 -E cluster.name=es-dev-cluster -E node.name=node-{{item[0]}}-data-{{item[1]}} -E node.data=true
   with_nested:
       - "{{play_hosts}}"
       - ["01", "02"]
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
   run_once: true

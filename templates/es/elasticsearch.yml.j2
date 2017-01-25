@@ -14,7 +14,7 @@
 #
 # Use a descriptive name for your cluster:
 #
-#cluster.name: my-application
+cluster.name: reader-es-cluster
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -25,6 +25,8 @@
 # Add custom attributes to the node:
 #
 #node.attr.rack: r1
+
+node.ingest: true
 #
 # ----------------------------------- Paths ------------------------------------
 #
@@ -66,11 +68,11 @@ network.host: 0.0.0.0
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-#discovery.zen.ping.unicast.hosts: ["host1", "host2"]
+discovery.zen.ping.unicast.hosts: [{% for item in ansible_play_hosts %} "es-{{ item }}-master-00", {% endfor %}]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
 #
-#discovery.zen.minimum_master_nodes: 3
+discovery.zen.minimum_master_nodes: 2
 #
 # For more information, see the documentation at:
 # <http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery.html>
@@ -79,7 +81,7 @@ network.host: 0.0.0.0
 #
 # Block initial recovery after a full cluster restart until N nodes are started:
 #
-#gateway.recover_after_nodes: 3
+gateway.recover_after_nodes: 3
 #
 # For more information, see the documentation at:
 # <http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-gateway.html>
@@ -89,3 +91,9 @@ network.host: 0.0.0.0
 # Require explicit names when deleting indices:
 #
 #action.destructive_requires_name: true
+xpack.security.enabled: false
+xpack.graph.enabled: false
+xpack.watcher.enabled: false
+xpack.monitoring.exporters.my_local:
+  type: local
+  use_ingest: false

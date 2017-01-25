@@ -1,6 +1,6 @@
 ---
 - name: deploy cluster
-  hosts: reader_servers
+  hosts: "{{es_cluster_hosts}}"
   sudo: yes
   vars_files:
     - ../vars/swarm_hosts.yml

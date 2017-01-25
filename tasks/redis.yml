@@ -1,3 +1,8 @@
+- name: copy redis config
+  copy:
+       src: ../files/redis
+       dest: /docker/
+
 - name: redis service
   shell: >-
          docker service create --name redis \
@@ -6,4 +11,4 @@
                          --mount type=bind,src=/docker/redis/redis.conf,destination=/usr/local/etc/redis/redis.conf \
                          redis  \
                          redis-server /usr/local/etc/redis/redis.conf
-  when: inventory_hostname in groups["reader_swarm_managers"]
+  when: inventory_hostname in groups[swarm_manager_group]
